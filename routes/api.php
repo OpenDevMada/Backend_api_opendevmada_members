@@ -89,7 +89,7 @@
 
             if($method === 'POST'){
 
-                $controller->create($id);
+                $controller->create();
                 
             }
             break;

@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . "/../config/bd.php";
-require_once __DIR__ . '/../Models/membre.php';
+require_once __DIR__ . '/../models/Membre.php';
 
 /**
- * AdminController - gère les opérations CRUD pour la table admin.
+ * MembreController - gère les opérations d'authentification et CRUD pour la table membres.
  */
 class MembreController {
 
@@ -84,7 +84,8 @@ class MembreController {
         global $pdo;
 
         // Mettre à jour champ dernier connexion
-        $sql = $pdo->prepare("UPDATE membres SET dernier_connexion = NOW() WHERE id = :id");
+        // Utiliser CURRENT_TIMESTAMP compatible MySQL/SQLite
+        $sql = $pdo->prepare("UPDATE membres SET dernier_connexion = CURRENT_TIMESTAMP WHERE id = :id");
 
         try{
 
@@ -143,7 +144,7 @@ class MembreController {
 
        $membre =  $stmt->fetch(PDO::FETCH_ASSOC);
 
-       if(count($membre) === 0){
+       if(!$membre){
         echo json_encode ([
             "status" =>"success",
             "message" => "Aucun membre trouvé",
@@ -195,9 +196,17 @@ class MembreController {
         // Récupération des champs
         $nom = $_POST['nom'];
         $prenom = $_POST['prenom'];
-        $email = $_POST['email'];
-        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $date_naissance = DateTime::createFromFormat('d/m/Y', $_POST['birthday'])->format('Y-m-d');
+        $email = $_POST['email'] ?? null;
+        $password = isset($_POST['password']) && $_POST['password'] !== '' ? password_hash($_POST['password'], PASSWORD_DEFAULT) : null;
+
+        // Gérer la date de naissance optionnelle et tolérer un format invalide
+        $date_naissance = null;
+        if (!empty($_POST['birthday'])) {
+            $dt = DateTime::createFromFormat('d/m/Y', $_POST['birthday']);
+            if ($dt instanceof DateTime) {
+                $date_naissance = $dt->format('Y-m-d');
+            }
+        }
         $sexe = $_POST['sexe'] ?? 'male';
         $adresse = $_POST['address'] ?? 'Toamasina Tanamakoa';
         $ville = $_POST['city'] ?? 'TOAMASINA';
@@ -249,7 +258,7 @@ class MembreController {
                 'statut' => $membre->getStatus()
             ]);
 
-            echo json_encode(["status" => "success", "message" => "Article créé avec succès !"]);
+            echo json_encode(["status" => "success", "message" => "Membre créé avec succès !"]);
         } catch (PDOException $e) {
             echo json_encode(["status" => "error", "message" => "Erreur BDD : " . $e->getMessage()]);
         }
@@ -265,7 +274,7 @@ class MembreController {
         $membreData = $stmt->fetch(PDO::FETCH_ASSOC);
      
         if (!$membreData) {
-            echo json_encode(["status" => "error", "message" => "Article non trouvé."]);
+            echo json_encode(["status" => "error", "message" => "Membre non trouvé."]);
             return;
         }
 
@@ -312,7 +321,7 @@ class MembreController {
                 }
             }
     
-        // Étape 5 : Crée un objet Article avec les nouvelles données
+        // Étape 5 : Crée un objet Membre avec les nouvelles données
         $membre = new Membre($id, $nom, null, $email, $password, null,null,$adresse,$ville,null, $telephone, $relativePath,null,$role,$statut);
 
         // Étape 6 : Prépare et exécute la requête SQL UPDATE
@@ -332,7 +341,7 @@ class MembreController {
                 'id' => $membre->getId()
             ]);
 
-            echo json_encode(["status" => "success", "message" => "Une membre a été mise à jour !"]);
+            echo json_encode(["status" => "success", "message" => "Le membre a été mis à jour !"]);
         } catch (PDOException $e) {
             echo json_encode(["status" => "error", "message" => "Erreur BDD : " . $e->getMessage()]);
         }

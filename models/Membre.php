@@ -100,7 +100,7 @@
         public function getAdresse(){
             return $this->adresse;
         }
-        public function setAdresse(){
+        public function setAdresse($adresse){
             $this->adresse = $adresse;
         }
 
@@ -160,4 +160,4 @@
        public function setStatus($statut){
             $this->statut = $statut;
        }
-    }
+}
