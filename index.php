@@ -1,9 +1,14 @@
 <?php
     // Point d'entrée
 
-    // Afficher les erreurs pour les dev (à retirer en prod)
-    ini_set('display_errors', 1);
-    error_reporting(E_ALL);
+    // Production settings - disable error display for security
+    // Comment out the next two lines for development
+    ini_set('display_errors', 0);
+    error_reporting(0);
+    
+    // Development settings - uncomment for local development
+    // ini_set('display_errors', 1);
+    // error_reporting(E_ALL);
 
     // configuration url ou recuperer le chemin demandé
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
