@@ -1,0 +1,6 @@
+{
+  "status": "static-cors-test",
+  "message": "Fichier JSON statique pour test CORS",
+  "timestamp": "2025-09-27",
+  "note": "Ce fichier ne dépend pas de PHP, seulement des headers Apache .htaccess"
+}

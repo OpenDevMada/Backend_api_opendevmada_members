@@ -2,14 +2,35 @@
 # InfinityFree .htaccess Configuration
 RewriteEngine On
 
-# CORS Headers for API requests
+# CORS Headers - MAXIMUM COMPATIBILITY for InfinityFree
 <IfModule mod_headers.c>
-    # Handle CORS for API endpoints
-    SetEnvIf Request_URI "^/api/" is_api_request
-    Header always set Access-Control-Allow-Origin "*" env=is_api_request
-    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" env=is_api_request
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization" env=is_api_request
-    Header always set Access-Control-Allow-Credentials "true" env=is_api_request
+    # Force CORS headers - try multiple methods
+    Header set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Origin "*"
+    Header onsuccess set Access-Control-Allow-Origin "*"
+    
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    
+    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control"
+    Header always set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control"
+    
+    Header set Access-Control-Max-Age "86400"
+    Header always set Access-Control-Max-Age "86400"
+    
+    # Expose headers
+    Header always set Access-Control-Expose-Headers "Content-Length, X-JSON"
+</IfModule>
+
+# Handle OPTIONS preflight - BEFORE rewrite rules
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ - [R=200,L]
+
+# Additional CORS attempt via SetEnvIf
+<IfModule mod_setenvif.c>
+    SetEnvIf Origin "^https?://(.*\.)?vercel\.app$" CORS_ORIGIN=$0
+    Header always set Access-Control-Allow-Origin "%{CORS_ORIGIN}e" env=CORS_ORIGIN
+    Header always set Access-Control-Allow-Origin "*" env=!CORS_ORIGIN
 </IfModule>
 
 # Handle Angular/React frontend routing (if applicable)

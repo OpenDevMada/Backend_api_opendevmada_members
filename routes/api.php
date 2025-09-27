@@ -1,6 +1,9 @@
 <?php
 
-    // CORS headers are now set in index.php
+    // Double protection CORS (au cas où index.php ne suffit pas)
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
     header('Content-Type: application/json; charset=utf-8');
     
     // Import des contrôleurs

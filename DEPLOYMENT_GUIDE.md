@@ -99,14 +99,16 @@ curl -X POST \
   https://opendevmadaannuaire.infinityfree.me/api/opendevmada/membre-login
 ```
 
-## Step 10: Configure CORS (If Needed)
+## Step 10: Configure CORS for Vercel
 
-If you have a frontend on a different domain, update `routes/api.php`:
+Your API is pre-configured to work with Vercel deployment. The following domains are automatically allowed:
 
-```php
-// Replace * with your frontend domain for security
-header("Access-Control-Allow-Origin: https://yourfrontend.com");
-```
+- `https://opendevmada-annuaire.vercel.app` (Production Vercel)
+- `http://localhost:3000` (Local development)
+- `http://localhost:5173` (Vite dev server)
+- `http://127.0.0.1:5500` (Live Server)
+
+**CORS is automatically configured in `cors-config.php`** - no manual configuration needed!
 
 ## 🔧 Troubleshooting
 
