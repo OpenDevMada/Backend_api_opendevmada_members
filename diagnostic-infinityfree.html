@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diagnostic API InfinityFree</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      .warning {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 10px;
+        overflow-x: auto;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔍 Diagnostic API InfinityFree</h1>
+
+    <div class="test-section">
+      <h2>Test 1: Accès Direct API</h2>
+      <button onclick="testDirectAPI()">Tester API Directement</button>
+      <div id="direct-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 2: Analyse Headers</h2>
+      <button onclick="testHeaders()">Analyser Headers</button>
+      <div id="headers-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 3: Test avec User-Agent</h2>
+      <button onclick="testWithUserAgent()">Test User-Agent</button>
+      <div id="useragent-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 4: Test CORS</h2>
+      <button onclick="testCORS()">Test CORS</button>
+      <div id="cors-result"></div>
+    </div>
+
+    <script>
+      const API_URL =
+        "https://opendevmadaannuaire.infinityfree.me/api/opendevmada/membres";
+
+      async function testDirectAPI() {
+        const resultDiv = document.getElementById("direct-result");
+        resultDiv.innerHTML = "<p>⏳ Test en cours...</p>";
+
+        try {
+          const response = await fetch(API_URL);
+          const text = await response.text();
+
+          let resultClass = "error";
+          let message = "";
+
+          if (response.ok) {
+            try {
+              const json = JSON.parse(text);
+              resultClass = "success";
+              message = `✅ API fonctionne ! Statut: ${response.status}`;
+            } catch (e) {
+              message = `⚠️ Réponse HTML détectée (protection anti-bot)`;
+              resultClass = "warning";
+            }
+          } else {
+            message = `❌ Erreur HTTP ${response.status}: ${response.statusText}`;
+          }
+
+          resultDiv.innerHTML = `
+                    <div class="${resultClass}">
+                        <p>${message}</p>
+                        <details>
+                            <summary>Réponse complète (100 premiers caractères)</summary>
+                            <pre>${text.substring(0, 500)}...</pre>
+                        </details>
+                    </div>
+                `;
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ Erreur réseau: ${error.message}</p>
+                    </div>
+                `;
+        }
+      }
+
+      async function testHeaders() {
+        const resultDiv = document.getElementById("headers-result");
+        resultDiv.innerHTML = "<p>⏳ Analyse des headers...</p>";
+
+        try {
+          const response = await fetch(API_URL);
+
+          const headers = {};
+          for (let [key, value] of response.headers.entries()) {
+            headers[key] = value;
+          }
+
+          resultDiv.innerHTML = `
+                    <div class="warning">
+                        <p>📋 Headers de réponse:</p>
+                        <pre>${JSON.stringify(headers, null, 2)}</pre>
+                        <p><strong>Status:</strong> ${response.status} ${
+            response.statusText
+          }</p>
+                        <p><strong>Content-Type:</strong> ${response.headers.get(
+                          "content-type"
+                        )}</p>
+                    </div>
+                `;
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ Erreur: ${error.message}</p>
+                    </div>
+                `;
+        }
+      }
+
+      async function testWithUserAgent() {
+        const resultDiv = document.getElementById("useragent-result");
+        resultDiv.innerHTML = "<p>⏳ Test avec User-Agent personnalisé...</p>";
+
+        try {
+          const response = await fetch(API_URL, {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+              Accept: "application/json, text/plain, */*",
+              "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+            },
+          });
+
+          const text = await response.text();
+          const isJSON = text.startsWith("{") || text.startsWith("[");
+
+          resultDiv.innerHTML = `
+                    <div class="${isJSON ? "success" : "warning"}">
+                        <p>${
+                          isJSON ? "✅ JSON reçu !" : "⚠️ Toujours du HTML"
+                        }</p>
+                        <details>
+                            <summary>Réponse</summary>
+                            <pre>${text.substring(0, 300)}...</pre>
+                        </details>
+                    </div>
+                `;
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ Erreur: ${error.message}</p>
+                    </div>
+                `;
+        }
+      }
+
+      async function testCORS() {
+        const resultDiv = document.getElementById("cors-result");
+        resultDiv.innerHTML = "<p>⏳ Test CORS...</p>";
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "GET",
+            mode: "cors",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          const corsHeaders = {
+            "Access-Control-Allow-Origin": response.headers.get(
+              "Access-Control-Allow-Origin"
+            ),
+            "Access-Control-Allow-Methods": response.headers.get(
+              "Access-Control-Allow-Methods"
+            ),
+            "Access-Control-Allow-Headers": response.headers.get(
+              "Access-Control-Allow-Headers"
+            ),
+          };
+
+          resultDiv.innerHTML = `
+                    <div class="success">
+                        <p>✅ CORS semble fonctionner</p>
+                        <details>
+                            <summary>Headers CORS</summary>
+                            <pre>${JSON.stringify(corsHeaders, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ Erreur CORS: ${error.message}</p>
+                    </div>
+                `;
+        }
+      }
+    </script>
+  </body>
+</html>

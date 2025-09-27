@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/railwayapp/cli/master/schema.json",
+  "build": {
+    "builder": "heroku/php"
+  },
+  "deploy": {
+    "startCommand": "heroku-php-apache2",
+    "healthcheckPath": "/",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "environment": {
+    "PHP_VERSION": "8.3"
+  }
+}

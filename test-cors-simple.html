@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test CORS Simple</title>
+  </head>
+  <body>
+    <h1>Test CORS</h1>
+    <button onclick="testCORS()">Test CORS Simple</button>
+    <div id="result"></div>
+
+    <script>
+      async function testCORS() {
+        const result = document.getElementById("result");
+        result.innerHTML = "Testing...";
+
+        try {
+          // Test 1: Fichier de test simple
+          console.log("Testing: cors-test-simple.php");
+          const response1 = await fetch(
+            "https://opendevmadaannuaire.infinityfree.me/cors-test-simple.php"
+          );
+          const data1 = await response1.text();
+          console.log("Response 1:", data1);
+
+          // Test 2: API normale
+          console.log("Testing: API normale");
+          const response2 = await fetch(
+            "https://opendevmadaannuaire.infinityfree.me/api/opendevmada/membres"
+          );
+          const data2 = await response2.text();
+          console.log("Response 2:", data2);
+
+          result.innerHTML = `
+                    <h3>Test 1 - Simple:</h3>
+                    <pre>${data1}</pre>
+                    <h3>Test 2 - API:</h3>
+                    <pre>${data2.substring(0, 500)}</pre>
+                `;
+        } catch (error) {
+          console.error("Error:", error);
+          result.innerHTML = `<div style="color: red;">Erreur: ${error.message}</div>`;
+        }
+      }
+    </script>
+  </body>
+</html>

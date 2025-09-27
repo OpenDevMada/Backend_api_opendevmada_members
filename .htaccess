@@ -2,6 +2,16 @@
 # InfinityFree .htaccess Configuration
 RewriteEngine On
 
+# CORS Headers for API requests
+<IfModule mod_headers.c>
+    # Handle CORS for API endpoints
+    SetEnvIf Request_URI "^/api/" is_api_request
+    Header always set Access-Control-Allow-Origin "*" env=is_api_request
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" env=is_api_request
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization" env=is_api_request
+    Header always set Access-Control-Allow-Credentials "true" env=is_api_request
+</IfModule>
+
 # Handle Angular/React frontend routing (if applicable)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
