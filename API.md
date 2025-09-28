@@ -1,15 +1,14 @@
-# API Documentation - OpenDevMada Annuaire
+# API Documentation - OpenDevMada Annuaire (Express)
 
 ## Base URL
 
-```
-http://localhost:2001/api/opendevmada
+```text
+http://localhost:8000/api/opendevmada
 ```
 
 ## Authentication
 
-* No token-based authentication.
-* Session is used after login.
+* Pas de jeton ni de session serveur. Le frontend conserve les informations renvoyées par l’API.
 
 ---
 
@@ -33,13 +32,14 @@ http://localhost:2001/api/opendevmada
 
 ```json
 {
-  "status": "Succès",
-  "message": "Connexion réussi !",
+  "status": "success",
+  "message": "Connexion réussie !",
   "membre": {
     "id": 1,
     "nom": "Nom",
     "prenom": "Prenom",
-    "role": "admin"
+    "role": "admin",
+    "photo_profil": "images/Nom/uuid.jpg"
   }
 }
 ```
@@ -93,8 +93,8 @@ http://localhost:2001/api/opendevmada
 
 ```json
 {
-  "status": "success",
-  "message": "Déconnexion réussie"
+  "status": "Succès",
+  "message": "Déconnexion réussi !"
 }
 ```
 
@@ -122,7 +122,14 @@ http://localhost:2001/api/opendevmada
 ```json
 {
   "status": "success",
-  "message": "Un membre a été créé !"
+  "message": "Membre créé avec succès !",
+  "data": {
+    "id": 42,
+    "nom": "Nom",
+    "prenom": "Prenom",
+    "photo_profil": "images/Nom/uuid.jpg",
+    "role": "admin"
+  }
 }
 ```
 
@@ -143,7 +150,12 @@ http://localhost:2001/api/opendevmada
 ```json
 {
   "status": "success",
-  "message": "Une membre a été mise à jour !"
+  "message": "Le membre a été mis à jour !",
+  "data": {
+    "id": 5,
+    "email": "new.mail@example.com",
+    "photo_profil": "images/Nom/uuid.jpg"
+  }
 }
 ```
 
@@ -157,8 +169,8 @@ http://localhost:2001/api/opendevmada
 
 ```json
 {
-  "status": "success",
-  "message": "Le membre a été supprimé."
+  "status": "Succès",
+  "message": "Suppression d'un membre réussi !"
 }
 ```
 

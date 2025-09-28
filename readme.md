@@ -1,99 +1,121 @@
-# OpenDev Mada API Backend
+# OpenDev Mada Members API (Express Edition)
 
-Bienvenue dans le projet **OpenDev Mada API Backend**. Ce dépôt contient le backend en PHP de l'annuaire de membres pour l'organisation OpenDev Mada.
+Cette nouvelle version du backend OpenDev Mada repose désormais sur **Node.js / Express**, tout en conservant les mêmes fonctionnalités que l’implémentation PHP originale. L’API offre une gestion complète des membres (CRUD), l’authentification simple et la prise en charge de l’upload d’images. Elle peut fonctionner indifféremment avec **SQLite** (développement) ou **MySQL** (production).
 
-## Description du projet
+## ✨ Points clés
 
-Ce projet est une API RESTful développée en **PHP (sans framework)** avec **MySQL** pour la gestion des membres (CRUD), l'authentification (Login/Logout) et la gestion des images de profil.
+- Express 4 + middleware modernes (CORS, Helmet, Multer, Validator)
+- Couche d’accès aux données partagée via **Knex** (support SQLite & MySQL)
+- Structure claire : routes → contrôleurs → services → couche DB
+- Upload de photos identique à la version PHP (`public/images/<Nom>/...`)
+- Configuration par fichier `.env` (voir `.env.example`)
 
-Le frontend pourra consommer cette API via des requêtes **JSON** ou **FormData** (dans le cas d'envoi de fichiers/images).
+## 🗂️ Nouvelle structure principale
 
-## Structure du projet
-
-```
-├── controllers/
-│   └── MembreController.php
-├── config/
-│   └── database.php
-│   └── regles.php
-├── routes/
-│   └── api.php
+```text
 ├── public/
-│   └── images/
-├── index.php
-├── README.md
-├── API.md
-└── ...
+│   └── images/                # Dossier partagé pour les photos
+├── src/
+│   ├── app.js                 # Configuration Express
+│   ├── index.js               # Point d'entrée
+│   ├── config/
+│   │   └── env.js             # Chargement des variables d'environnement
+│   ├── controllers/
+│   │   └── membre.controller.js
+│   ├── db/
+│   │   └── index.js           # Initialisation Knex + auto-création de table
+│   ├── middleware/
+│   │   ├── db.middleware.js
+│   │   └── error.middleware.js
+│   ├── routes/
+│   │   └── membre.routes.js
+│   ├── services/
+│   │   └── membre.service.js
+│   └── utils/
+│       └── file-system.js
+├── package.json
+├── .env.example
+└── README.md
 ```
 
-## Technologies utilisées
+## 🚀 Démarrage rapide
 
-* PHP 8.x
-* MySQL
-* JavaScript (pour tests API via fetch/AJAX)
+```bash
+# 1. Installer les dépendances
+npm install
 
-## Fonctionnalités principales
+# 2. Copier la configuration d'exemple
+cp .env.example .env
 
-* CRUD Membres (Créer, Lire, Mettre à jour, Supprimer)
-* Authentification : Login / Logout
-* Upload d'image de profil (FormData)
-* Architecture MVC simplifiée
-* API REST sans framework
+# 3. Lancer en mode développement (SQLite par défaut)
 
-## Installation
 
-1. **Cloner le dépôt** :
+# ou démarrer en production
+npm start
+```
 
-   ```bash
-   git clone https://github.com/OpenDevMada/Backend_api_opendevmada_members.git
-   ```
+### Variables d’environnement
 
-2. **Configurer la base de données** :
+| Clé | Description | Valeur par défaut |
+|-----|-------------|-------------------|
+| `NODE_ENV` | Environnement (`development`, `production`) | `development` |
+| `PORT` | Port d'écoute Express | `8000` |
+| `DB_CLIENT` | `sqlite3` ou `mysql2` | `sqlite3` |
+| `SQLITE_PATH` | Chemin du fichier SQLite | `./storage/database.sqlite` |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Paramètres MySQL (utilisés si `DB_CLIENT=mysql2`) | variables Railway / PlanetScale |
+| `CORS_ORIGINS` | Liste d’origines autorisées (`*` pour tout accepter) | `*` |
 
-   * Crée une base de données MySQL.
-   * Importer le script SQL (non inclus ici).
-   * Configurer les accès DB dans `config/database.php`.
+## 🧪 Endpoints (identiques à la version PHP)
 
-3. **Lancer le serveur local (XAMPP ou autre)**
+Base URL : `http://localhost:8000/api/opendevmada`
 
-4. Accéder à l'API via :
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| `GET` | `/membres` | Liste tous les membres (ordre décroissant) |
+| `GET` | `/membre/:id` | Retourne un membre précis |
+| `POST` | `/membre-login` | Authentifie un membre (`{ email, password }`) |
+| `POST` | `/membre-logout/:id` | Met à jour la dernière connexion |
+| `POST` | `/membre-create` | Crée un membre (FormData + image) |
+| `POST` | `/membre-update/:id` | Met à jour les informations + photo |
+| `DELETE` | `/membre-delete/:id` | Supprime un membre et sa photo |
 
-   ```
-   http://localhost/chemin-vers-projet/index.php
-   ```
+Consultez `API.md` pour les exemples détaillés de payloads.
 
-## Endpoints
+## 🛢️ Choix de la base de données
 
-Voir le fichier **API.md** pour les détails des endpoints et les méthodes à utiliser (POST, GET, DELETE).
+### Développement (par défaut)
 
-## Règles d'envoi des données
+- L’API utilise `SQLite` en local (`storage/database.sqlite`).
+- Knex crée automatiquement la table `membres` si elle n’existe pas.
 
-* **Requête JSON** :
+### Production (Railway, PlanetScale, etc.)
 
-  * Pour le Login
-* **FormData** :
+1. Passer `DB_CLIENT=mysql2` dans `.env`.
+2. Renseigner `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
+3. Redémarrer le serveur – aucune autre modification nécessaire.
 
-  * Pour la création et mise à jour d’un membre (surtout pour les images)
+## 📷 Upload d'images
 
-## Auteur
+- Les images sont stockées dans `public/images/<Nom_membre>/`.
+- Les noms sont sanitisés et un identifiant unique est ajouté pour éviter les collisions.
+- Lors d'une mise à jour, l’ancienne image est supprimée automatiquement.
 
-* **Landrosse RADIMSON**
+## 🤝 Contribution
 
-  * Backend Developer
-  * Projet OpenDev Mada
+```bash
+git clone https://github.com/OpenDevMada/Backend_api_opendevmada_members.git
+cd Backend_api_opendevmada_members
+npm install
+```
+
+1. Créez une branche (`git checkout -b feature/ma-fonction`)
+2. Implémentez / testez
+3. Soumettez une PR 💡
+
+## 📄 Licence
+
+Projet sous licence MIT.
 
 ---
 
-## Remarques importantes
-
-* Les routes sont testées en local.
-* La gestion de sécurité (token, auth avancée) n’est pas encore implémentée.
-* Prêt à être intégré par le frontend.
-
-## Licence
-
-Ce projet est sous licence MIT.
-
----
-
-Tu veux contribuer ? Contacte-moi ! 🚀
+Merci à **Landrosse RADIMSON** et à toute l'équipe OpenDev Mada pour ce projet ! 🚀

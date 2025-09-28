@@ -1,174 +1,110 @@
-# Documentation Technique — Backend API OpenDevMada Members
+# Documentation technique — OpenDevMada Members API (Express)
 
 ## Aperçu
-- API REST en PHP (sans framework) avec MySQL pour la gestion des membres de l’annuaire OpenDev Mada
-- Fonctionnalités principales: Authentification (login/logout), CRUD membres, upload d’image de profil
-- Réponses JSON uniformes
 
-## Pile technique
-- PHP 8.x
-- MySQL / MariaDB
-- SQLite (pour tests rapides, optionnel)
-- Apache (réécriture via `.htaccess`)
+- API REST **Node.js / Express 4** assurant la gestion des membres (authentification simple + CRUD complet).
+- Prend en charge **SQLite** (développement) et **MySQL** (production) via **Knex**.
+- Upload d’images identique à l’ancienne version PHP (`public/images/<Nom>/...`).
+- CORS configurable par variable d’environnement (`CORS_ORIGINS`).
 
-## Structure du projet
-```
-Backend_api_opendevmada_members/
-├── .htaccess                 # Réécriture vers index.php
-├── __env.php                 # Variables d'environnement (DB)
-├── API.md                    # Ancienne doc API
+## Architecture applicative
+
+```text
+src/
+├── app.js                # Configuration Express, middlewares et routes
+├── index.js              # Bootstrap (init DB + start serveur)
 ├── config/
-│   ├── bd.php                # Connexion PDO (utilise __env.php)
-│   └── regles.php            # Réécriture des URIs + extraction d'ID
+│   └── env.js            # Chargement/normalisation des variables d’env
 ├── controllers/
-│   └── MembreController.php  # Logique métier (auth + CRUD)
+│   └── membre.controller.js   # Validation et orchestration HTTP
 ├── db/
-│   └── opendevmad_db.sql     # Script SQL (schéma + seed)
-├── index.php                 # Point d'entrée HTTP
-├── models/
-│   └── Membre.php            # Modèle de données (POPO)
+│   └── index.js          # Knex + création automatique du schéma
+├── middleware/
+│   ├── db.middleware.js  # Attache la connexion Knex à chaque requête
+│   └── error.middleware.js# 404 + gestion globale des erreurs
 ├── routes/
-│   └── api.php               # Définition des routes et CORS
-└── readme.md
+│   └── membre.routes.js  # Déclaration des endpoints `/api/opendevmada`
+├── services/
+│   └── membre.service.js # Accès aux données + règles métier
+└── utils/
+    └── file-system.js    # Gestion des dossiers / images
 ```
 
-## Entrée et routage HTTP
-- `index.php`
-  - Active l’affichage d’erreurs (dev)
-  - Parse l’URI via `parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)`
-  - Délègue les routes commençant par `/api/` à `routes/api.php`
-- `.htaccess`
-  - Redirige toutes les requêtes vers `index.php` (si le fichier/dossier n’existe pas)
-  - Permet un routage unique et propre côté PHP
+## Cycle de requête
 
-## Définition des routes et CORS
-- `routes/api.php`
-  - CORS: `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS`, `Access-Control-Allow-Headers: Content-Type`
-  - Forçage JSON: `Content-Type: application/json; charset=utf-8`
-  - Charge `controllers/MembreController.php`
-  - Calcule `$_SERVER['REQUEST_METHOD']`
-  - Normalise l’URI et extrait `id` si présent via `config/regles.php`
-  - Routes disponibles:
-    - `GET    /api/opendevmada/membres` → liste des membres
-    - `GET    /api/opendevmada/membre/{id}` → détail membre
-    - `POST   /api/opendevmada/membre-login` → login JSON
-    - `POST   /api/opendevmada/membre-logout/{id}` → logout + mise à jour `dernier_connexion`
-    - `DELETE /api/opendevmada/membre-delete/{id}` → suppression
-    - `POST   /api/opendevmada/membre-create` → création (multipart/form-data)
-    - `POST   /api/opendevmada/membre-update/{id}` → mise à jour (multipart/form-data)
+1. `src/index.js` initialise la base (`initialiseDatabase`) puis lance le serveur Express.
+2. `app.js` applique `helmet`, `cors`, parse JSON/form-data et sert `/images` en statique.
+3. `db.middleware` attache `req.db` (instance Knex) pour la durée de la requête.
+4. `membre.routes` dirige vers les contrôleurs selon l’endpoint.
+5. Les contrôleurs valident les entrées (`express-validator`), orchestrent les appels service et renvoient des réponses JSON uniformes.
+6. `error.middleware` capture les exceptions, sérialise les erreurs et renvoie un statut cohérent.
 
-## Règles de normalisation d’URI
-- `config/regles.php`
-  - Détecte et extrait les IDs numériques dans l’URL via regex, puis réécrit l’URI-cible
-  - Exemples:
-    - `/api/opendevmada/membre/12` → `id=12` et `uri=/api/opendevmada/membre`
-    - `/api/opendevmada/membre-logout/12` → `id=12` et `uri=/api/opendevmada/membre-logout`
-    - `/api/opendevmada/membre-delete/12` → `id=12` et `uri=/api/opendevmada/membre-delete`
-    - `/api/opendevmada/membre-update/12` → `id=12` et `uri=/api/opendevmada/membre-update`
+## Couche base de données
 
-## Modèle de données
-- `models/Membre.php`
-  - Propriétés: `id, nom, prenom, email, mot_de_passe, date_naissance, sexe, adresse, ville, pays, telephone, photo_profil, dernier_connexion, role, statut`
-  - Getters/Setters pour chaque propriété
-  - Remarques:
-    - `setAdresse()` ne prend pas de paramètre mais assigne `$adresse` (manquant) → incohérence à corriger
-    - Méthodes `getLastConexion`/`setLastConexion` orthographe “Conexion” (pas bloquant mais incohérent)
+- **Knex** crée un pool unique par process.
+- `env.config` décide du client (`sqlite3` ou `mysql2`).
+- `db/index.js` :
+  - Crée le dossier SQLite si nécessaire.
+  - Vérifie l’existence de la table `membres` et la crée avec le schéma attendu si besoin.
+  - Expose `initialiseDatabase`, `getDB` et `destroyDatabase`.
+- Les services `membre.service.js` centralisent toutes les requêtes SQL :
+  - `listMembers`, `getMemberById`, `getMemberByEmail`
+  - `createMember` (hash `bcryptjs`, insertion, retour du nouvel enregistrement)
+  - `updateMember` (mise à jour partielle + hash conditionnel)
+  - `deleteMember` et `touchDerniereConnexion`
 
-## Contrôleur: `controllers/MembreController.php`
-- `findByMail($email)`
-  - Récupère un membre par email
-- `login(array $data)`
-  - Entrée: JSON `{ email, password }`
-  - Vérifie email, compare le mot de passe avec `password_verify`
-  - Démarre une session et stocke des infos de membre
-  - Codes HTTP: `400` (email manquant), `200` (ok), `401` (credentials invalides), `500` (erreur BDD)
-- `logout(int $id)`
-  - Met à jour `dernier_connexion = CURRENT_TIMESTAMP` (compatible MySQL/SQLite) puis `session_destroy()`
-  - Renvoie JSON de confirmation
-- `getMembers()`
-  - Récupère et renvoie la liste ordonnée desc par `id`
-  - Renvoie un tableau vide avec message si aucun membre
-- `getMember(int $id)`
-  - Détail d’un membre par `id`
-  - Remarque: utilise `count($membre)` sur un fetch; prévoir un test `if (!$membre)`
-- `create()`
-  - Attend `multipart/form-data`
-  - Champs requis (dans le code): `nom`, `prenom`, `phone`, `image`
-  - Autres champs utilisés: `email`, `password`, `birthday (d/m/Y)`, `sexe`, `address`, `city`, `contry`, `role`, `statut`
-  - Gère l’upload image: stocke dans `public/images/{nom}/`
-  - Hache le mot de passe via `password_hash`
-  - Insertion en BDD puis JSON succès/erreur
-- `update($id)`
-  - `multipart/form-data`, tous les champs optionnels: `email`, `password`, `address`, `city`, `phone`, `role`, `statut`, `image`
-  - Gère remplacement d’image (supprime l’ancienne si une nouvelle est fournie)
-  - Met à jour les colonnes correspondantes
+## Gestion des fichiers
 
-## Base de données
-- Script: `db/opendevmad_db.sql`
-- Table `membres`
-  - Colonnes principales: `id` (PK, AI), `nom`, `prenom`, `email` (UNIQUE), `mot_de_passe`, `date_naissance`, `sexe`, `adresse`, `ville`, `pays`, `telephone`, `photo_profil`, `date_inscription`, `dernier_connexion`, `role` (def. `membre`), `statut` (def. `actif`)
-  - Index: `PRIMARY KEY(id)`, `UNIQUE(email)`
-  - Un enregistrement exemple est fourni
+- `utils/file-system.js` s’assure que `public/images` existe et crée un sous-dossier par membre (`buildMemberImageDir`).
+- Les images uploadées via `multer` (stockage mémoire) sont persistées par `saveImageBuffer` avec suffixe unique.
+- `deleteMemberPhoto` supprime le fichier associé lors d’un `DELETE` ou d’un remplacement.
 
-## Configuration & Environnement
-- `__env.php`
-  - Définit les constantes `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
-  - Ajoute `DB_DRIVER` (`mysql` par défaut, peut être `sqlite`) et `DB_SQLITE_PATH` (chemin du fichier DB)
-- `config/bd.php`
-  - Crée un objet PDO global `$pdo`
-  - Si `DB_DRIVER=sqlite`:
-    - Connexion `sqlite:...`
-    - Active `PRAGMA foreign_keys = ON`
-    - Crée automatiquement la table `membres` si elle n’existe pas
-  - Sinon (MySQL): connexion habituelle en UTF-8
+## Validation et formats de réponses
 
-### Support SQLite (tests rapides)
-1. Dans `Backend_api_opendevmada_members/__env.php`, mettre:
-   ```php
-   define("DB_DRIVER", "sqlite")
-   // Optionnel: modifier le chemin si besoin
-   define("DB_SQLITE_PATH", __DIR__ . "/storage/database.sqlite")
-   ```
-2. Aucun script SQL à exécuter: le schéma minimal est créé automatiquement au premier accès
-3. Le fichier sera créé sous `Backend_api_opendevmada_members/storage/database.sqlite`
-4. Pour réinitialiser la base de test: supprimer le fichier `.sqlite` (il sera régénéré)
-5. Tester rapidement:
-   ```bash
-   curl http://localhost:2001/api/opendevmada/membres
-   ```
+- `express-validator` garantit les champs requis (`email`, `password`, `nom`, `phone`, etc.).
+- Schéma de réponse standard :
 
-## Sécurité & CORS
-- CORS ouvert à `*` pour faciliter le dev front
-- Authentification par session (pas de JWT ni token)
-- Mots de passe hachés via `password_hash`
-- À prévoir en production: sécurisation CORS, validation serveur, contrôle d’accès par rôle, gestion fine des codes HTTP
+  ```json
+  {
+    "status": "success" | "error",
+    "message": "Texte explicatif",
+    "data": {...} | [] | null
+  }
+  ```
 
-## Réponses et gestion d’erreurs
-- Format commun des erreurs:
-```json
-{
-  "status": "error",
-  "message": "Message d'erreur explicite"
-}
+- En cas d’erreur de validation, statut HTTP `400` + message du premier échec.
+- Ressource inexistante → `404` avec `{ "status": "error", "message": "Membre non trouvé." }`.
+
+## Variables d’environnement clés
+
+| Clé | Description | Défaut |
+| --- | --- | --- |
+| `NODE_ENV` | `development` / `production` | `development` |
+| `PORT` | Port HTTP | `8000` |
+| `DB_CLIENT` | `sqlite3` ou `mysql2` | `sqlite3` |
+| `SQLITE_PATH` | Chemin fichier SQLite | `storage/database.sqlite` |
+| `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | Connexion MySQL | Variables Railway/PlanetScale |
+| `CORS_ORIGINS` | CSV d’origines autorisées (`*` = tout) | `*` |
+
+## Différences majeures vs version PHP
+
+- Plus de session côté serveur : la réponse login retourne simplement les métadonnées du membre.
+- Routage centralisé dans Express (`/api/opendevmada/...`) sans `.htaccess`.
+- Gestion des erreurs unifiée (middleware `errorHandler`).
+- Création de schéma automatisée via Knex (plus besoin de scripts PHP personnalisés).
+- Configuration et déploiement pensés pour Railway/Render (Node natif).
+
+## Tests rapides
+
+```bash
+npm install
+cp .env.example .env
+npm run dev
+# puis tester GET http://localhost:8000/api/opendevmada/membres
 ```
-- Codes HTTP explicitement utilisés: `200`, `400`, `401`, `500` (selon méthodes)
 
-## Incohérences/Points d’attention (à corriger)
-- Harmoniser l’orthographe des méthodes `getLastConexion`/`setLastConexion` (suggestion: `getLastConnexion`/`setLastConnexion`)
+## Prochaines pistes
 
-## Historique des changements
-- Version initiale: Auth (login/logout), CRUD membres, upload d’images, CORS par défaut, routage simple via `.htaccess`
-
-## Correctifs appliqués — 2025-09-24
-- Correction du chemin d’inclusion du modèle dans `controllers/MembreController.php` (casse Linux)
-- Correction de `setAdresse($adresse)` dans `models/Membre.php`
-- Suppression du doublon de règle pour `membre-logout` dans `config/regles.php`
-- Harmonisation des libellés de messages: remplacement de « Article » par « Membre » dans `create()` et `update()`
-- Correction de l’appel à `create()` dans `routes/api.php` (suppression de l’argument inutile)
-
-## Améliorations suggérées
-- Harmoniser les noms de fichiers et inclusions (casse)
-- Corriger `setAdresse()` et messages "Article"
-- Gérer proprement les 404/422 et les `OPTIONS` pour CORS
-- Ajouter une validation serveur stricte (email, formats, contraintes)
-- Introduire un mécanisme d’authentification par token (JWT) si nécessaire
+- Introduire des tests automatisés (Jest/Supertest).
+- Ajouter une authentification basée sur tokens (JWT) si besoin de sessions persistantes.
+- Restreindre les rôles/permissions pour certaines opérations (actuellement ouvert).

@@ -1,155 +1,52 @@
-# 🚀 InfinityFree Deployment Guide - OpenDevMada Backend API
+# 🚀 Deployment Guide – OpenDevMada Express API
 
-## Step 1: Sign Up & Create Account
+Cette version de l’API fonctionne entièrement avec **Node.js / Express**. Choisissez un hébergeur qui supporte Node (Railway, Render, VPS, etc.). Les instructions ci-dessous couvrent le scénario recommandé avec Railway, puis donnent quelques alternatives.
 
-1. **Visit** [infinityfree.net](https://infinityfree.net)
-2. **Click** "Create Account" → Sign up with email
-3. **Verify** your email address
-4. **Login** to your InfinityFree account
+## ✅ Plateforme recommandée : Railway
 
-## Step 2: Create Hosting Account
+1. **Créer un compte et un projet**
+   - Rendez-vous sur [railway.app](https://railway.app) et connectez votre compte GitHub.
+   - Importez ce dépôt (`Backend_api_opendevmada_members`).
 
-1. **Click** "Create Account" in your dashboard
-2. **Choose Domain**:
-   - Free subdomain: `yoursite.infinityfreeapp.com`
-   - Or use your own domain (if you have one)
-3. **Select** "Create Account"
-4. **Wait** for account creation (2-5 minutes)
+2. **Configurer les variables d’environnement**
+   - Dans l’onglet *Variables*, ajoutez les clés présentes dans `.env.example`.
+   - Pour MySQL, Railway crée automatiquement `MYSQLHOST`, `MYSQLPORT`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`.
 
-## Step 3: Access Control Panel
+3. **Choisir la base de données**
+   - **PoC / développement** : laissez `DB_CLIENT=sqlite3`. Aucune action supplémentaire n’est nécessaire.
+   - **Production** : passez `DB_CLIENT=mysql2` et reliez un service MySQL Railway (ou PlanetScale). Copiez les identifiants dans les variables `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` si vous n’utilisez pas les valeurs automatiques de Railway.
 
-1. **Click** "Go to Control Panel" or "cPanel"
-2. **Login** with the credentials provided
-3. You should see the cPanel dashboard
+4. **Déployer**
+   - Railway installe automatiquement les dépendances et lance `npm start`.
+   - L’URL générée ressemble à `https://votre-app.up.railway.app`.
 
-## Step 4: Create MySQL Database
+5. **Mettre à jour le frontend**
+   - Remplacez l’ancienne URL InfinityFree par `https://votre-app.up.railway.app/api/opendevmada/...`.
 
-1. **Find** "MySQL Databases" in cPanel
-2. **Create Database**:
-   - In the "New Database" field, type: `opendevmada`
-   - It will be automatically prefixed to: `if0_xxxxxxx_opendevmada`
-   - Click "Create Database"
+## 🔁 Commandes utilisées par Railway
 
-**Note**: InfinityFree automatically uses your account username and vPanel password for database access. You don't need to create separate database users.
-
-3. **Note down your database details** (from the "Current Databases" table):
-   - **Database Host**: `sql306.infinityfree.com` (or similar)
-   - **Database Name**: `if0_40033946_opendevmada` (your actual name)
-   - **Username**: `if0_40033946` (your account username)
-   - **Password**: opendevmada
-
-## Step 5: Import Database Schema
-
-1. **Click** "phpMyAdmin" in cPanel
-2. **Select** your database from the left sidebar
-3. **Click** "Import" tab
-4. **Choose File** → Upload your `db/opendevmad_db.sql`
-5. **Click** "Go" to import
-6. **Verify** tables were created successfully
-
-## Step 6: Update Environment Configuration
-
-1. **Open** `__env_production.php` (created earlier)
-2. **Replace** the placeholders with your actual database details:
-
-```php
-define("DB_HOST", "sql200.infinityfree.com"); // Your actual host
-define("DB_NAME", "if0_xxxxxxx_opendevmada"); // Your actual database name
-define("DB_USER", "if0_xxxxxxx_admin");       // Your actual username
-define("DB_PASSWORD", "your_strong_password"); // Your actual password
-```
-
-3. **Save** and **rename** `__env_production.php` to `__env.php`
-
-## Step 7: Upload Files to Server
-
-### Option A: File Manager (Easier)
-1. **Click** "File Manager" in cPanel
-2. **Navigate** to `htdocs` folder
-3. **Delete** default files (index.html, etc.)
-4. **Upload** your project files:
-   - Select "Upload" button
-   - Choose all your PHP files
-   - Upload folders: `config/`, `controllers/`, `models/`, `routes/`, `public/`
-5. **Extract** if uploaded as zip
-
-### Option B: FTP (Advanced)
-1. **Use** FTP client (FileZilla recommended)
-2. **Connect** with FTP credentials from cPanel
-3. **Upload** all files to `/htdocs/` directory
-
-## Step 8: Set File Permissions
-
-1. **In File Manager**, right-click on `public/images/` folder
-2. **Change Permissions** to `755` (rwx-r-x-r-x)
-3. **Apply to subfolders** if any
-
-## Step 9: Test Your API
-
-1. **Visit** your site: `https://opendevmadaannuaire.infinityfree.me`
-2. **Test endpoints**:
-   - `https://opendevmadaannuaire.infinityfree.me/api/opendevmada/membres`
-   - `https://opendevmadaannuaire.infinityfree.me/api/opendevmada/membre-login`
-
-### Test Login Endpoint:
 ```bash
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"email":"landros00t@gmail.com","password":"your_password"}' \
-  https://opendevmadaannuaire.infinityfree.me/api/opendevmada/membre-login
+npm install
+npm run build   # non requis pour cette API mais peut être défini si besoin
+npm start
 ```
 
-## Step 10: Configure CORS for Vercel
+*(Railway lancera `npm start` par défaut. Aucun build supplémentaire n’est nécessaire.)*
 
-Your API is pre-configured to work with Vercel deployment. The following domains are automatically allowed:
+## 🔧 Post-déploiement – checklist
 
-- `https://opendevmada-annuaire.vercel.app` (Production Vercel)
-- `http://localhost:3000` (Local development)
-- `http://localhost:5173` (Vite dev server)
-- `http://127.0.0.1:5500` (Live Server)
+- [ ] `GET /api/opendevmada/membres` répond bien `200`.
+- [ ] Upload de fichier testé via `POST /membre-create` (FormData).
+- [ ] CORS autorise votre frontend (`CORS_ORIGINS` dans `.env`).
+- [ ] Base de données correctement initialisée (voir logs Railway).
+- [ ] Logs Railway propres (aucune exception répétée).
 
-**CORS is automatically configured in `cors-config.php`** - no manual configuration needed!
+## 🌐 Autres plateformes compatibles
 
-## 🔧 Troubleshooting
+- **Render** : config similaire avec `npm start`. Prévoir un add-on PostgreSQL/MySQL ou PlanetScale externe.
+- **Vercel** : adaptés aux fonctions serverless, mais pas idéal pour une API Express complète. Préférer Railway/Render.
+- **VPS / Docker** : lancer `npm install` puis `npm start` (penser au reverse proxy + HTTPS).
 
-### Common Issues:
+## 🗃️ Legacy (ancienne version PHP)
 
-1. **500 Error**: Check file permissions and `.htaccess`
-2. **Database Connection Error**: Verify credentials in `__env.php`
-3. **API Not Working**: Ensure `.htaccess` is uploaded and working
-4. **Images Not Uploading**: Check `public/images/` permissions (755)
-
-### Debug Mode:
-- Temporarily enable error display in `index.php`:
-```php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-```
-
-## 📋 Checklist
-
-- [ ] InfinityFree account created
-- [ ] MySQL database created and imported
-- [ ] `__env.php` updated with correct credentials
-- [ ] All files uploaded to `/htdocs/`
-- [ ] File permissions set correctly
-- [ ] API endpoints tested
-- [ ] Production mode enabled (errors hidden)
-
-## 🎉 Your API is Live!
-
-Your OpenDevMada Backend API is now deployed and accessible at:
-`https://opendevmadaannuaire.infinityfree.me/api/opendevmada/`
-
-## 📝 Next Steps
-
-1. **Test all endpoints** thoroughly
-2. **Update frontend** to use new API URL
-3. **Monitor** performance and errors
-4. **Consider** adding SSL certificate (Let's Encrypt available on InfinityFree)
-
----
-
-**Need Help?** 
-- InfinityFree has great documentation and community support
-- Check their knowledge base for hosting-specific issues
+Les étapes d’hébergement InfinityFree concernaient l’ancienne version PHP et ne sont plus maintenues. Elles ont été retirées de ce document pour éviter toute confusion.
