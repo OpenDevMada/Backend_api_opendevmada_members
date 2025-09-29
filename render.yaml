@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: opendevmada-express-api
+    env: node
+    plan: free
+    runtime: node
+    nodeVersion: 18
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    disk:
+      name: uploads
+      mountPath: public/images
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_CLIENT
+        value: mysql2
+      - key: DB_HOST
+        fromSecret: db-host
+      - key: DB_PORT
+        fromSecret: db-port
+      - key: DB_USER
+        fromSecret: db-user
+      - key: DB_PASSWORD
+        fromSecret: db-password
+      - key: DB_NAME
+        fromSecret: db-name
+      - key: CORS_ORIGINS
+        value: "https://votre-frontend.vercel.app,https://votre-autre-domaine"

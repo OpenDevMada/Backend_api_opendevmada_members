@@ -1,0 +1,36 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build output
+coverage/
+dist/
+.tmp/
+.DS_Store
+
+# IDE/Editor settings
+.vscode/
+.idea/
+
+# Local databases and uploads
+storage/*.sqlite
+storage/*.db
+storage/*.sqlite3
+public/images/**
+!public/images/.gitkeep

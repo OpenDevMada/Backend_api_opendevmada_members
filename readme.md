@@ -88,11 +88,19 @@ Consultez `API.md` pour les exemples détaillés de payloads.
 - L’API utilise `SQLite` en local (`storage/database.sqlite`).
 - Knex crée automatiquement la table `membres` si elle n’existe pas.
 
-### Production (Railway, PlanetScale, etc.)
+### Production (Railway, Render, PlanetScale)
 
 1. Passer `DB_CLIENT=mysql2` dans `.env`.
-2. Renseigner `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
-3. Redémarrer le serveur – aucune autre modification nécessaire.
+2. Renseigner `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (Railway, PlanetScale, Render MySQL, etc.).
+3. Définir `CORS_ORIGINS` pour vos domaines frontend.
+4. Redémarrer le serveur – aucune autre modification nécessaire.
+
+## ☁️ Déploiement
+
+- **Railway** : connectez le dépôt GitHub, laissez la build `npm install` et le start `npm start`. Railway génère automatiquement les variables MySQL et propose un volume persistant si vous restez sur SQLite.
+- **Render** : utilisez le fichier `render.yaml` (blueprint) ou créez un service Node → build `npm install` / start `npm start`. Ajoutez un disque persistant sur `public/images` et configurez vos secrets MySQL (`DB_HOST`, `DB_PORT`, etc.).
+- **VPS / Docker** : installez Node 18+, exécutez `npm install`, puis démarrez l’appli via `npm start` ou `pm2`. Placez un reverse proxy (Nginx) pour gérer SSL et le port public.
+- **Serverless (Vercel, Netlify)** : nécessite un refactor vers des fonctions serverless et un stockage externe pour les images (non géré par cette version Express).
 
 ## 📷 Upload d'images
 
